@@ -1,0 +1,44 @@
+---
+title: "Security"
+description: "Security requirements for a safe VoucherPay integration."
+---
+
+## Keep API keys server-side
+
+Merchant API keys must never be sent to browsers, mobile apps, or third-party clients.
+
+Correct:
+
+```text
+Browser -> your backend -> VoucherPay
+```
+
+Incorrect:
+
+```text
+Browser -> VoucherPay with merchant API key
+```
+
+## Use client secrets in the browser
+
+The browser may use only the session-scoped `clientSecret`. It can read public status for one checkout session and cannot create payments for the merchant.
+
+## Verify webhooks
+
+Always verify `VoucherPay-Signature` against the raw request body. Reject events that fail verification.
+
+## Use idempotency keys
+
+All money-moving operations must use idempotency keys. Use stable IDs from your own system, such as order IDs, refund IDs, or withdrawal operation IDs.
+
+## Validate redirects
+
+VoucherPay validates redirect URLs, but your store should also avoid user-controlled redirects after checkout.
+
+## Recommended controls
+
+- Store secrets in a secret manager or hosting provider env vars.
+- Rotate API keys regularly.
+- Use HTTPS everywhere.
+- Log VoucherPay session IDs and your internal order IDs.
+- Do not log full API keys, webhook secrets, or client secrets.

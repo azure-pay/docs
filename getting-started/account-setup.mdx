@@ -1,0 +1,36 @@
+---
+title: "Account setup"
+description: "Create a merchant account, complete KYB, add payout details, and issue API keys."
+---
+
+Before integrating checkout, your merchant account must be operational.
+
+## Setup checklist
+
+1. Create or receive access to a merchant dashboard account.
+2. Complete merchant KYB.
+3. Wait for VoucherPay approval.
+4. Add at least one payout destination.
+5. Wait for payout destination approval.
+6. Add allowed storefront origins.
+7. Publish checkout terms if terms acceptance is enabled.
+8. Issue an API key.
+9. Configure a webhook endpoint.
+
+## API keys
+
+API keys are created in the merchant portal. They start with `vpay_`.
+
+Use API keys only on your backend. Never expose them in browser code, mobile apps, logs, screenshots, or public repositories.
+
+## Allowed origins
+
+Allowed origins protect your customers from redirect abuse. If your checkout passes redirect URLs, their origins must be configured first.
+
+Example allowed origin:
+
+```text
+https://store.example.com
+```
+
+Do not include paths. Use only scheme, host, and optional port.

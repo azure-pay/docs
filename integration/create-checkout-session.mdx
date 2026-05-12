@@ -1,0 +1,63 @@
+---
+title: "Create checkout sessions"
+description: "Create a VoucherPay checkout session from your server for each store order."
+---
+
+Create checkout sessions from your backend. This binds the payment to your merchant account and keeps your API key secret.
+
+## Endpoint
+
+```http
+POST /v1/public/checkout-sessions
+Authorization: Bearer vpay_test_...
+Content-Type: application/json
+Idempotency-Key: ORDER-1234
+```
+
+## Request
+
+```json
+{
+  "externalReference": "ORDER-1234",
+  "amountCents": 9900,
+  "currency": "EUR",
+  "customerEmail": "customer@example.com",
+  "productTitle": "Order ORDER-1234",
+  "successRedirect": "https://store.example.com/thanks",
+  "failureRedirect": "https://store.example.com/checkout?failed=1",
+  "cancelRedirect": "https://store.example.com/checkout?cancelled=1",
+  "metadata": {
+    "orderId": "ORDER-1234"
+  }
+}
+```
+
+## Response
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "cm...",
+    "externalReference": "ORDER-1234",
+    "status": "PENDING_GATES",
+    "amountCents": 9900,
+    "currency": "EUR",
+    "iframeCheckoutUrl": null,
+    "clientSecret": "cm..._secret_...",
+    "metadata": {
+      "orderId": "ORDER-1234"
+    }
+  }
+}
+```
+
+## Idempotency
+
+Use a stable idempotency key for every create request. The best value is your immutable order ID.
+
+If the customer refreshes checkout, call the same endpoint with the same `externalReference` and idempotency key. VoucherPay returns the existing session instead of creating a duplicate order.
+
+## Redirect origin validation
+
+If you send redirect URLs, their origins must be configured on your merchant account. VoucherPay rejects unsafe, private-network, or unapproved redirect URLs.

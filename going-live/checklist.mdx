@@ -1,0 +1,45 @@
+---
+title: "Go-live checklist"
+description: "Production checklist for launching VoucherPay on a merchant store."
+---
+
+Complete this checklist before accepting live customer payments.
+
+## Merchant account
+
+- KYB approved.
+- Acquirer provisioning completed.
+- Payout destination approved.
+- Production API key issued.
+- Production webhook secret saved.
+- Allowed production origins configured.
+- Terms published if terms acceptance is enabled.
+
+## Store integration
+
+- Backend creates checkout sessions server-side.
+- API key is not exposed to browser code.
+- Stable idempotency keys are used.
+- Widget receives only `sessionId` and `clientSecret`.
+- Success, failure, cancel, and in-progress redirects are HTTPS.
+- Webhook handler verifies `VoucherPay-Signature`.
+- Duplicate webhook events are ignored safely.
+
+## Operational readiness
+
+- Support team can find payment sessions by order reference.
+- Finance team understands payout and withdrawal states.
+- Refund and reversal process is documented.
+- Incident contact is configured.
+- Monitoring is enabled for webhook failures.
+
+## Final smoke
+
+Run a production smoke with a low-value test transaction if permitted:
+
+1. Create checkout session.
+2. Complete payment.
+3. Confirm voucher issued.
+4. Confirm webhook received.
+5. Confirm dashboard payment state.
+6. Confirm refund or reversal path in sandbox/staging before live use.

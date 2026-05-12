@@ -1,0 +1,42 @@
+---
+title: "Payouts and withdrawals"
+description: "Understand how captured payments become available and how withdrawals are requested."
+---
+
+Captured payments do not always become immediately withdrawable. VoucherPay can apply controls before funds are available.
+
+## Balance states
+
+| State | Meaning |
+| --- | --- |
+| Captured | Payment succeeded and voucher was issued. |
+| On merchant books | Voucher value has moved to the merchant ledger. |
+| Locked or held | Value is temporarily blocked by settlement delay, reserve, risk review, or chargeback control. |
+| Available | Value can be included in a withdrawal request. |
+| Withdrawn | Withdrawal has completed. |
+
+## Payout destinations
+
+Before withdrawing, add a payout destination and wait for approval.
+
+Supported destination types depend on your account setup. The portal may support bank accounts and wallet destinations.
+
+## Withdrawal flow
+
+1. Choose an active payout destination.
+2. Select available value.
+3. Submit the withdrawal request.
+4. VoucherPay reviews and processes the withdrawal.
+5. Final state is visible in the portal and sent by webhook.
+
+## Why funds may be locked
+
+Funds can be locked because of:
+
+- settlement delay;
+- rolling reserve;
+- chargeback hold;
+- missing payout destination approval;
+- operational review.
+
+Your commercial agreement controls which rules apply in production.

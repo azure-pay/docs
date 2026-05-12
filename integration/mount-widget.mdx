@@ -1,0 +1,81 @@
+---
+title: "Mount the checkout widget"
+description: "Use the browser-safe session ID and client secret to render VoucherPay checkout."
+---
+
+The widget runs in the browser. It must receive only:
+
+- `sessionId`
+- `clientSecret`
+- optional public API base URL
+
+Never pass your merchant API key to the browser.
+
+## Basic mount
+
+```html
+<div id="voucherpay-checkout"></div>
+```
+
+```ts
+import { mount } from "@azure-pay/checkout-widget";
+
+const handle = mount({
+  target: "#voucherpay-checkout",
+  sessionId: "cm...",
+  clientSecret: "cm..._secret_...",
+  apiBaseUrl: "https://api-demo-02f5.up.railway.app",
+});
+```
+
+## Lifecycle handlers
+
+```ts
+const handle = mount({
+  target: "#voucherpay-checkout",
+  sessionId,
+  clientSecret,
+  onReady: () => {
+    console.log("Checkout ready");
+  },
+  onTermsRequired: ({ termsVersionId }) => {
+    console.log("Terms required", termsVersionId);
+  },
+  onTermsAccepted: () => {
+    console.log("Terms accepted");
+  },
+  onProcessing: () => {
+    console.log("Payment processing");
+  },
+  onSuccess: ({ paymentSessionId, voucherReference }) => {
+    console.log("Payment captured", paymentSessionId, voucherReference);
+  },
+  onError: ({ code, message }) => {
+    console.error("VoucherPay error", code, message);
+  },
+});
+```
+
+## Status polling
+
+The widget polls VoucherPay status using `X-VoucherPay-Client-Secret`. It does not use your merchant API key.
+
+By default, the widget uses a backoff-style polling schedule. You can override it:
+
+```ts
+mount({
+  target: "#voucherpay-checkout",
+  sessionId,
+  clientSecret,
+  pollIntervalMs: 3000,
+  maxPollDurationMs: 15 * 60 * 1000,
+});
+```
+
+## Cleanup
+
+If your app navigates away or remounts the checkout page, destroy the old widget instance:
+
+```ts
+handle.destroy();
+```

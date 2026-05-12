@@ -1,0 +1,85 @@
+---
+title: "Quickstart"
+description: "Create a checkout session from your backend and mount the VoucherPay widget in your storefront."
+---
+
+This quickstart uses the server SDK and browser widget.
+
+## 1. Install packages
+
+```bash
+npm install @voucherpay/server @azure-pay/checkout-widget
+```
+
+## 2. Add environment variables
+
+```bash
+VOUCHERPAY_API_BASE_URL=https://api-demo-02f5.up.railway.app
+VOUCHERPAY_SECRET_KEY=vpay_test_...
+NEXT_PUBLIC_VOUCHERPAY_API_BASE_URL=https://api-demo-02f5.up.railway.app
+```
+
+Use your own issued API key from the merchant portal.
+
+## 3. Create a checkout session on your backend
+
+```ts
+import { VoucherPay } from "@voucherpay/server";
+
+const voucherpay = new VoucherPay(process.env.VOUCHERPAY_SECRET_KEY!, {
+  apiBaseUrl: process.env.VOUCHERPAY_API_BASE_URL,
+});
+
+const session = await voucherpay.sessions.create(
+  {
+    externalReference: "ORDER-1234",
+    amountCents: 9900,
+    currency: "EUR",
+    customerEmail: "customer@example.com",
+    productTitle: "Order ORDER-1234",
+    successRedirect: "https://store.example.com/thanks",
+    failureRedirect: "https://store.example.com/checkout?failed=1",
+    cancelRedirect: "https://store.example.com/checkout?cancelled=1",
+    metadata: {
+      orderId: "ORDER-1234",
+    },
+  },
+  {
+    idempotencyKey: "ORDER-1234",
+  },
+);
+```
+
+Return only the browser-safe fields to your frontend:
+
+```ts
+return {
+  sessionId: session.id,
+  clientSecret: session.clientSecret,
+};
+```
+
+## 4. Mount the widget
+
+```ts
+import { mount } from "@azure-pay/checkout-widget";
+
+const handle = mount({
+  target: "#voucherpay-checkout",
+  sessionId,
+  clientSecret,
+  apiBaseUrl: process.env.NEXT_PUBLIC_VOUCHERPAY_API_BASE_URL,
+  onSuccess: ({ paymentSessionId, voucherReference }) => {
+    console.log("Paid", paymentSessionId, voucherReference);
+  },
+  onError: ({ code, message }) => {
+    console.error(code, message);
+  },
+});
+```
+
+Destroy the widget when leaving the page:
+
+```ts
+handle.destroy();
+```

@@ -1,0 +1,52 @@
+---
+title: "Testing"
+description: "Test checkout, webhooks, and merchant operations before going live."
+---
+
+Use the demo environment for integration testing.
+
+## Demo surfaces
+
+| Surface | URL |
+| --- | --- |
+| Demo store | `https://demo-merchant-demo.up.railway.app` |
+| Merchant dashboard | `https://dashboard-demo.up.railway.app` |
+| API | `https://api-demo-02f5.up.railway.app` |
+
+## Suggested test flow
+
+1. Create a merchant API key.
+2. Create a checkout session from your backend.
+3. Mount the widget in your frontend.
+4. Complete card entry and 3DS with sandbox test details.
+5. Confirm success page renders.
+6. Confirm webhook receipt.
+7. Confirm payment appears in the merchant dashboard.
+8. Confirm voucher reference exists.
+9. Request a withdrawal when funds are available.
+
+## Test card
+
+For the current sandbox flow, use:
+
+```text
+4242 4242 4242 4242
+Any future expiry
+Any CVC
+```
+
+3DS behavior depends on the acquirer sandbox scenario.
+
+## Release smoke check
+
+From this repository, run:
+
+```bash
+pnpm smoke:release
+```
+
+To also create a checkout session:
+
+```bash
+MERCHANT_API_KEY=vpay_test_... pnpm smoke:release
+```

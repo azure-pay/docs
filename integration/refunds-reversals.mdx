@@ -1,0 +1,41 @@
+---
+title: "Refunds and reversals"
+description: "Understand the difference between same-day reversals and post-settlement refunds."
+---
+
+VoucherPay supports post-payment money movement through controlled merchant and admin workflows.
+
+## Reversal
+
+A reversal is a same-day void before settlement. Use it when the original payment should be cancelled before it settles.
+
+Typical use cases:
+
+- customer abandons immediately after payment;
+- duplicate payment caught the same day;
+- merchant cannot fulfil before settlement.
+
+## Refund
+
+A refund is used after settlement. Depending on acquirer rules, refunds can be full or partial.
+
+Typical use cases:
+
+- product returned;
+- partial order cancelled;
+- customer service adjustment.
+
+## Idempotency
+
+Refund and reversal requests must use an `Idempotency-Key`. Use a stable key derived from your internal operation ID:
+
+```text
+refund-ORDER-1234-1
+reverse-ORDER-1234
+```
+
+Never retry money-moving calls without the same idempotency key.
+
+## Operational note
+
+Refunds, reversals, withdrawals, and chargebacks affect merchant balances and audit trails. Use webhooks and the merchant portal to reconcile the final state.

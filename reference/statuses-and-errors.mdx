@@ -1,0 +1,55 @@
+---
+title: "Statuses and errors"
+description: "Common checkout statuses, widget errors, and API errors."
+---
+
+## Checkout statuses
+
+| Status | Meaning |
+| --- | --- |
+| `CREATED` | Session created; payment not started. |
+| `PENDING_GATES` | Terms or another gate must be completed first. |
+| `CHECKOUT_IN_PROGRESS` | Hosted payment form is active or payment is processing. |
+| `CAPTURED` | Payment captured and voucher issuance can complete. |
+| `FAILED` | Payment failed. Customer may retry depending on checkout state. |
+| `EXPIRED` | Session expired. Create a new checkout session. |
+| `REVERSED` | Payment was voided/reversed. |
+
+## Widget error codes
+
+| Code | Meaning |
+| --- | --- |
+| `session_not_found` | Session ID is invalid or unavailable. |
+| `session_expired` | Checkout session expired. |
+| `payment_failed` | Payment failed. |
+| `frame_load_failed` | Hosted payment frame did not load. |
+| `network_error` | Browser could not reach VoucherPay. |
+| `poll_timeout` | Payment did not reach a final state before timeout. |
+| `terms_acceptance_failed` | Terms acceptance failed. |
+| `start_payment_failed` | VoucherPay could not start hosted payment. |
+| `unknown` | Unexpected error. |
+
+## API errors
+
+| Error | Meaning |
+| --- | --- |
+| `api_key_required` | Missing bearer API key. |
+| `api_key_invalid` | API key is malformed, missing, or revoked. |
+| `merchant_not_found` | API key points to a missing merchant. |
+| `acquirer_not_configured` | VoucherPay API is not configured for acquiring. |
+| `acquirer_not_provisioned` | Merchant is not provisioned for Cardaq/acquiring. |
+| `redirect_origin_not_configured` | Merchant has no allowed origins configured. |
+| `redirect_origin_not_allowed` | Redirect URL origin is not allowed. |
+| `merchant_terms_not_published` | Terms acceptance is required but no terms are published. |
+| `acquirer_error` | Acquirer rejected or failed the operation. |
+
+## Support information to collect
+
+When reporting an issue, include:
+
+- merchant name;
+- order reference;
+- VoucherPay session ID;
+- approximate timestamp;
+- browser/device;
+- screenshot or webhook delivery ID when available.

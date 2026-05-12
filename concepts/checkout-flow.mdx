@@ -1,0 +1,30 @@
+---
+title: "Checkout flow"
+description: "The customer journey from your cart to VoucherPay success and merchant redirect."
+---
+
+A complete VoucherPay checkout should feel like part of your store:
+
+1. Customer lands on your site.
+2. Customer adds an item to cart and clicks checkout.
+3. Your backend creates a VoucherPay checkout session with the order amount and reference.
+4. Your frontend mounts the VoucherPay widget with the `sessionId` and `clientSecret`.
+5. VoucherPay shows the merchant and order context.
+6. If terms are required, the customer reviews and accepts them.
+7. The hosted card-entry form loads.
+8. Customer enters card details.
+9. 3DS is completed when requested.
+10. VoucherPay polls status using the browser-safe client secret.
+11. On capture, VoucherPay shows success, issues the voucher, sends webhooks, and redirects the customer back to your store.
+
+## Merchant identification
+
+VoucherPay identifies the merchant at checkout-session creation. That is the key control: the order is tied to your merchant account before the cardholder reaches card entry or 3DS.
+
+Your store must never create a generic payment first and decide the merchant later.
+
+## Redirects
+
+Provide HTTPS redirect URLs for success, failure, cancel, and in-progress states. VoucherPay validates redirect origins against your configured merchant origins.
+
+For local development over plain `http://localhost`, the demo store omits redirects so the hosted card surface can render without browser security issues.

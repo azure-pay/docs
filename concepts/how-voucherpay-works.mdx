@@ -1,0 +1,39 @@
+---
+title: "How VoucherPay works"
+description: "The parties, payment objects, and voucher lifecycle behind a VoucherPay checkout."
+---
+
+VoucherPay sits between your store, the acquirer, and your merchant portal.
+
+## Parties
+
+| Party | Role |
+| --- | --- |
+| Cardholder | The customer buying from your store. |
+| Merchant | Your business. You own the customer relationship and the order. |
+| VoucherPay | Creates checkout sessions, tracks payment state, issues vouchers, and manages merchant settlement workflows. |
+| Acquirer | Processes the card payment and 3DS challenge through a hosted payment surface. |
+
+## Main objects
+
+| Object | What it means |
+| --- | --- |
+| Checkout session | A payment attempt created for one store order. |
+| Client secret | Browser-safe session secret used by the widget to read public status. |
+| Voucher | The receipt-like record issued after successful capture. |
+| Webhook event | A signed notification from VoucherPay to your backend. |
+| Payout destination | Your approved bank or wallet destination for withdrawals. |
+| Withdrawal | A merchant request to move available funds out of VoucherPay. |
+
+## Voucher lifecycle
+
+The normal happy path is:
+
+1. `CREATED` or `PENDING_GATES`
+2. `CHECKOUT_IN_PROGRESS`
+3. `CAPTURED`
+4. voucher issued
+5. voucher funded and allocated to merchant books
+6. available for withdrawal after any configured controls
+
+Operational controls such as settlement delay, reserve, chargeback holds, and payout approval can affect when funds become withdrawable.

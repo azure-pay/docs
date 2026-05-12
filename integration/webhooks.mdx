@@ -1,0 +1,68 @@
+---
+title: "Webhooks"
+description: "Receive signed VoucherPay events when payments, vouchers, and withdrawals change state."
+---
+
+Configure a webhook endpoint in the merchant portal to receive asynchronous events.
+
+## Signature verification
+
+VoucherPay signs webhook payloads with the `VoucherPay-Signature` header:
+
+```text
+t=<unix timestamp>,v1=<hmac sha256>
+```
+
+Verify against the exact raw request body.
+
+```ts
+import { VoucherPay } from "@voucherpay/server";
+
+const voucherpay = new VoucherPay(process.env.VOUCHERPAY_SECRET_KEY!);
+
+export async function POST(request: Request) {
+  const rawBody = await request.text();
+  const signature = request.headers.get("VoucherPay-Signature");
+
+  const event = voucherpay.webhooks.constructEvent(
+    rawBody,
+    signature,
+    process.env.VOUCHERPAY_WEBHOOK_SECRET!,
+  );
+
+  switch (event.type) {
+    case "payment.captured":
+      // Mark your order paid.
+      break;
+    case "payment.failed":
+      // Keep order open or show retry.
+      break;
+    case "voucher.transferred":
+      // Voucher is on merchant books.
+      break;
+  }
+
+  return Response.json({ received: true });
+}
+```
+
+## Event handling rules
+
+- Return `2xx` only after durable processing.
+- Store event IDs and ignore duplicates.
+- Do not rely only on redirects for payment state.
+- Treat webhooks as the source of truth for async payment outcomes.
+- Keep raw body parsing enabled for signature verification.
+
+## Common events
+
+| Event | Meaning |
+| --- | --- |
+| `payment.captured` | Card payment captured and voucher issued. |
+| `payment.failed` | Payment failed or was rejected. |
+| `voucher.transferred` | Voucher value moved to merchant books. |
+| `voucher.held` | Voucher value is held for a risk or settlement control. |
+| `voucher.released` | Previously held value is released. |
+| `withdrawal.requested` | Merchant requested a withdrawal. |
+| `withdrawal.completed` | Withdrawal completed. |
+| `chargeback.received` | Chargeback recorded against a payment. |

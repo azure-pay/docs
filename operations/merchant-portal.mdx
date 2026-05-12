@@ -1,0 +1,36 @@
+---
+title: "Merchant portal"
+description: "Manage payments, vouchers, API keys, webhooks, branding, terms, and payout settings."
+---
+
+The merchant portal is where your operations team manages VoucherPay after integration.
+
+## Main areas
+
+| Area | Purpose |
+| --- | --- |
+| Overview | Account status, balances, and recent activity. |
+| Payments | Checkout sessions, captures, failed payments, and voucher references. |
+| Payouts | Payout destinations and withdrawal requests. |
+| API keys | Create and revoke backend API keys. |
+| Webhooks | Configure endpoints and inspect delivery history. |
+| Branding | Configure checkout logo, accent color, and display text. |
+| Terms | Publish the terms shown before payment when terms acceptance is enabled. |
+
+## API key rotation
+
+1. Create a new API key.
+2. Deploy the new key to your backend.
+3. Confirm traffic uses the new key.
+4. Revoke the old key.
+
+Do not rotate keys by editing frontend code. API keys belong only on your server.
+
+## Webhook operations
+
+Use webhook delivery history to debug:
+
+- endpoint failures;
+- duplicate events;
+- missing order updates;
+- signature verification errors.
