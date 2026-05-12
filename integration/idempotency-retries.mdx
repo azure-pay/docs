@@ -1,0 +1,42 @@
+---
+title: "Idempotency and retries"
+description: "Retry VoucherPay API calls safely without creating duplicate payments or money movement."
+---
+
+Use idempotency for every state-changing operation.
+
+## Checkout session creation
+
+Use your immutable order ID:
+
+```http
+Idempotency-Key: ORDER-1234
+```
+
+If your request times out, retry with the same body and the same idempotency key.
+
+## Recommended keys
+
+| Operation | Recommended key |
+| --- | --- |
+| Checkout session create | `order:<orderId>` or the plain order ID |
+| Refund | `refund:<refundId>` |
+| Reversal | `reverse:<orderId>` |
+| Withdrawal | `withdrawal:<withdrawalId>` |
+
+## Do not
+
+- Generate a random key for every retry.
+- Reuse the same key for different orders.
+- Retry money-moving operations with changed parameters.
+- Treat a browser redirect as the final source of truth.
+
+## Webhook deduplication
+
+API idempotency and webhook deduplication are different.
+
+For webhooks, store `VoucherPay-Event-Id` or the envelope `id` and ignore duplicates after the first successful processing.
+
+## Indeterminate outcomes
+
+If a network timeout happens after you create a checkout session, do not create a new order. Retrieve or recreate using the same `externalReference` and idempotency key, then reconcile by session ID.

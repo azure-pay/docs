@@ -1,19 +1,55 @@
 ---
 title: "Webhooks"
-description: "Receive signed VoucherPay events when payments, vouchers, and withdrawals change state."
+description: "Receive signed VoucherPay events and use them to fulfill orders safely."
 ---
 
-Configure a webhook endpoint in the merchant portal to receive asynchronous events.
+Webhooks are the durable confirmation path for payment and voucher state.
 
-## Signature verification
+Do not rely only on success redirects or frontend callbacks to mark orders paid.
 
-VoucherPay signs webhook payloads with the `VoucherPay-Signature` header:
+## Delivery format
 
-```text
-t=<unix timestamp>,v1=<hmac sha256>
+VoucherPay sends JSON:
+
+```json
+{
+  "id": "evt_...",
+  "type": "payment.captured",
+  "createdAt": "2026-05-12T12:00:00.000Z",
+  "data": {
+    "paymentSessionId": "cm...",
+    "externalReference": "ORDER-1234",
+    "voucherReference": "VP-..."
+  }
+}
 ```
 
-Verify against the exact raw request body.
+Headers:
+
+| Header | Meaning |
+| --- | --- |
+| `VoucherPay-Signature` | HMAC signature header. |
+| `VoucherPay-Event-Type` | Event type, for example `payment.captured`. |
+| `VoucherPay-Event-Id` | Event ID. |
+| `VoucherPay-Delivery-Id` | Delivery attempt ID. |
+
+## Signature format
+
+`VoucherPay-Signature` has this format:
+
+```text
+t=<unix-seconds>,v1=<hex-hmac-sha256>
+```
+
+The signed payload is:
+
+```text
+<timestamp>.<raw request body>
+```
+
+The default tolerance is 5 minutes.
+
+## Verify with the server SDK
 
 ```ts
 import { VoucherPay } from "@voucherpay/server";
@@ -32,13 +68,10 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case "payment.captured":
-      // Mark your order paid.
+      // Mark order paid. Use event.data.externalReference to find your order.
       break;
     case "payment.failed":
-      // Keep order open or show retry.
-      break;
-    case "voucher.transferred":
-      // Voucher is on merchant books.
+      // Mark failed or allow retry.
       break;
   }
 
@@ -46,23 +79,46 @@ export async function POST(request: Request) {
 }
 ```
 
-## Event handling rules
+## Raw body requirement
+
+Signature verification must use the exact raw request body. If your framework parses JSON before verification, configure the webhook route to expose the raw body.
+
+## Retry behavior
+
+VoucherPay retries failed deliveries on this schedule:
+
+```text
+1m -> 5m -> 30m -> 2h -> 6h -> 12h -> 24h -> 48h
+```
+
+Deliveries can be:
+
+| Status | Meaning |
+| --- | --- |
+| `PENDING` | Waiting to be delivered. |
+| `IN_PROGRESS` | Currently being delivered. |
+| `DELIVERED` | Merchant endpoint returned success. |
+| `DEAD` | Retry schedule exhausted. |
+
+## Processing rules
 
 - Return `2xx` only after durable processing.
 - Store event IDs and ignore duplicates.
-- Do not rely only on redirects for payment state.
-- Treat webhooks as the source of truth for async payment outcomes.
-- Keep raw body parsing enabled for signature verification.
+- Keep processing idempotent.
+- Do not assume event ordering across independent objects.
+- Acknowledge quickly and move slow work to your own queue.
+- Reconcile by `paymentSessionId` or `externalReference` when in doubt.
 
-## Common events
+## Fulfillment mapping
 
-| Event | Meaning |
+| Event | Merchant action |
 | --- | --- |
-| `payment.captured` | Card payment captured and voucher issued. |
-| `payment.failed` | Payment failed or was rejected. |
-| `voucher.transferred` | Voucher value moved to merchant books. |
-| `voucher.held` | Voucher value is held for a risk or settlement control. |
-| `voucher.released` | Previously held value is released. |
-| `withdrawal.requested` | Merchant requested a withdrawal. |
-| `withdrawal.completed` | Withdrawal completed. |
-| `chargeback.received` | Chargeback recorded against a payment. |
+| `payment.captured` | Mark order paid and release fulfillment. |
+| `payment.failed` | Mark failed or allow retry. |
+| `voucher.transferred` | Record value moved to merchant books, if subscribed. |
+| `voucher.held` | Record value is held. |
+| `voucher.released` | Record hold/refund release state. |
+| `withdrawal.requested` | Track withdrawal request. |
+| `withdrawal.completed` | Mark payout completed. |
+
+Only depend on events enabled for your merchant account.

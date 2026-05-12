@@ -1,45 +1,61 @@
 ---
 title: "Go-live checklist"
-description: "Production checklist for launching VoucherPay on a merchant store."
+description: "Production readiness checklist for launching VoucherPay on a merchant store."
 ---
 
-Complete this checklist before accepting live customer payments.
+Do not go live until every item is complete.
 
 ## Merchant account
 
 - KYB approved.
 - Acquirer provisioning completed.
+- Production merchant API key issued.
+- Webhook signing secret issued.
 - Payout destination approved.
-- Production API key issued.
-- Production webhook secret saved.
 - Allowed production origins configured.
-- Terms published if terms acceptance is enabled.
+- Terms state confirmed.
+- Cardholder KYC disabled unless VoucherPay confirms it is live.
 
 ## Store integration
 
-- Backend creates checkout sessions server-side.
-- API key is not exposed to browser code.
-- Stable idempotency keys are used.
+- Checkout sessions are created server-side.
+- Amount and currency come from your database, not the browser.
+- `EUR` is used unless VoucherPay has enabled more currencies for your account.
+- Idempotency keys are stable and derived from order/operation IDs.
 - Widget receives only `sessionId` and `clientSecret`.
-- Success, failure, cancel, and in-progress redirects are HTTPS.
-- Webhook handler verifies `VoucherPay-Signature`.
-- Duplicate webhook events are ignored safely.
+- Redirect URLs are HTTPS and allowed.
+- Webhook endpoint verifies `VoucherPay-Signature`.
+- Duplicate webhooks do not double-fulfill orders.
+- Payment fulfillment depends on webhook/reconciliation, not redirects alone.
 
-## Operational readiness
+## Testing
 
-- Support team can find payment sessions by order reference.
-- Finance team understands payout and withdrawal states.
-- Refund and reversal process is documented.
-- Incident contact is configured.
-- Monitoring is enabled for webhook failures.
+- Successful checkout tested.
+- Terms-required checkout tested if enabled.
+- Failed payment tested.
+- Duplicate checkout create retry tested.
+- Webhook signature failure tested.
+- Duplicate webhook delivery tested.
+- Refund/reversal process tested in sandbox or staging.
+- Payout/withdrawal operational path tested.
 
-## Final smoke
+## Monitoring
 
-Run a production smoke with a low-value test transaction if permitted:
+Monitor:
 
-1. Create checkout session.
-2. Complete payment.
-3. Confirm voucher issued.
-4. Confirm webhook received.
-5. Confirm dashboard payment state.
-6. Confirm refund or reversal path in sandbox/staging before live use.
+- checkout create API failures;
+- webhook delivery failures;
+- payment sessions stuck in processing;
+- failed refunds or reversals;
+- unavailable payout destinations;
+- support tickets tied to payment session IDs.
+
+## Launch day
+
+1. Rotate from demo/test keys to production keys.
+2. Confirm production webhook endpoint is active.
+3. Run a low-value live smoke transaction if permitted.
+4. Confirm `payment.captured` webhook is received.
+5. Confirm the order is marked paid once.
+6. Confirm payment and voucher appear in the merchant portal.
+7. Keep support and engineering available during first live traffic.

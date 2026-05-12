@@ -1,6 +1,6 @@
 ---
 title: "Statuses and errors"
-description: "Common checkout statuses, widget errors, and API errors."
+description: "Common checkout statuses, widget errors, and API error responses."
 ---
 
 ## Checkout statuses
@@ -10,46 +10,38 @@ description: "Common checkout statuses, widget errors, and API errors."
 | `CREATED` | Session created; payment not started. |
 | `PENDING_GATES` | Terms or another gate must be completed first. |
 | `CHECKOUT_IN_PROGRESS` | Hosted payment form is active or payment is processing. |
-| `CAPTURED` | Payment captured and voucher issuance can complete. |
-| `FAILED` | Payment failed. Customer may retry depending on checkout state. |
-| `EXPIRED` | Session expired. Create a new checkout session. |
-| `REVERSED` | Payment was voided/reversed. |
+| `CAPTURED` | Payment captured. |
+| `FAILED` | Payment failed. |
+| `EXPIRED` | Session expired. |
+| `REVERSED` | Payment reversed. |
+
+The widget may expose lowercase status values in browser-safe status responses.
 
 ## Widget error codes
 
-| Code | Meaning |
-| --- | --- |
-| `session_not_found` | Session ID is invalid or unavailable. |
-| `session_expired` | Checkout session expired. |
-| `payment_failed` | Payment failed. |
-| `frame_load_failed` | Hosted payment frame did not load. |
-| `network_error` | Browser could not reach VoucherPay. |
-| `poll_timeout` | Payment did not reach a final state before timeout. |
-| `terms_acceptance_failed` | Terms acceptance failed. |
-| `start_payment_failed` | VoucherPay could not start hosted payment. |
-| `unknown` | Unexpected error. |
+| Code | Meaning | What to do |
+| --- | --- | --- |
+| `session_not_found` | Session ID is invalid. | Create a new session or check ID. |
+| `session_expired` | Checkout expired. | Let customer restart checkout. |
+| `payment_failed` | Payment failed. | Show retry or alternate payment path. |
+| `frame_load_failed` | Hosted card frame did not load. | Check browser console, CSP, network, and acquirer availability. |
+| `network_error` | Browser could not reach VoucherPay. | Retry, check connectivity, inspect API base URL. |
+| `poll_timeout` | No final state before timeout. | Reconcile by session ID server-side. |
+| `terms_acceptance_failed` | Terms acceptance failed. | Refresh status and retry. |
+| `start_payment_failed` | Hosted payment could not start. | Check gates, merchant provisioning, and acquirer errors. |
+| `unknown` | Unexpected error. | Capture logs and contact support. |
 
 ## API errors
 
-| Error | Meaning |
-| --- | --- |
-| `api_key_required` | Missing bearer API key. |
-| `api_key_invalid` | API key is malformed, missing, or revoked. |
-| `merchant_not_found` | API key points to a missing merchant. |
-| `acquirer_not_configured` | VoucherPay API is not configured for acquiring. |
-| `acquirer_not_provisioned` | Merchant is not provisioned for Cardaq/acquiring. |
-| `redirect_origin_not_configured` | Merchant has no allowed origins configured. |
-| `redirect_origin_not_allowed` | Redirect URL origin is not allowed. |
-| `merchant_terms_not_published` | Terms acceptance is required but no terms are published. |
-| `acquirer_error` | Acquirer rejected or failed the operation. |
-
-## Support information to collect
-
-When reporting an issue, include:
-
-- merchant name;
-- order reference;
-- VoucherPay session ID;
-- approximate timestamp;
-- browser/device;
-- screenshot or webhook delivery ID when available.
+| Error | Meaning | Fix |
+| --- | --- | --- |
+| `api_key_required` | Missing bearer key. | Add `Authorization: Bearer ...`. |
+| `api_key_invalid` | Key malformed, missing, or revoked. | Issue a new API key. |
+| `merchant_not_found` | Key points to missing merchant. | Contact VoucherPay support. |
+| `acquirer_not_configured` | API lacks acquirer credentials. | Environment issue. |
+| `acquirer_not_provisioned` | Merchant not provisioned. | Complete onboarding/provisioning. |
+| `redirect_origin_not_configured` | No allowed origins configured. | Add storefront origin. |
+| `redirect_origin_not_allowed` | Redirect origin not allowed. | Add/correct origin. |
+| `merchant_terms_not_published` | Terms required but no published terms. | Contact VoucherPay support. |
+| `kyc_not_implemented` | Cardholder KYC is enabled but not live. | Disable cardholder KYC until available. |
+| `acquirer_error` | Acquirer rejected or failed request. | Inspect response and retry only when safe. |

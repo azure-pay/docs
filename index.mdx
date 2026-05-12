@@ -1,37 +1,60 @@
 ---
 title: "VoucherPay merchant docs"
-description: "Accept card payments through VoucherPay, issue vouchers automatically, and manage settlement from the merchant portal."
+description: "Integrate VoucherPay checkout, receive signed webhooks, issue vouchers after capture, and operate payouts from the merchant portal."
 ---
 
-VoucherPay lets a merchant sell a product or service through a card checkout while VoucherPay handles the payment session, card-entry handoff, voucher issuance, settlement tracking, and payout workflow.
+VoucherPay lets merchants accept card payments through a hosted acquiring flow while VoucherPay handles checkout session state, terms acceptance, voucher issuance, settlement tracking, webhooks, and merchant payout workflows.
 
-The merchant keeps the normal store experience:
+These docs are for engineering and operations teams integrating VoucherPay into a store.
 
-1. Customer adds an item to cart.
-2. Your backend creates a VoucherPay checkout session.
-3. Your frontend mounts the VoucherPay widget.
-4. The customer reviews the order, accepts terms when required, enters card details, and completes 3DS if requested.
-5. VoucherPay confirms capture, issues the voucher, sends webhooks, and shows the transaction in the merchant portal.
+## What VoucherPay does
 
-Use these docs if you are:
+1. Your backend creates a checkout session for a known merchant and store order.
+2. Your frontend mounts the VoucherPay widget with a session ID and client secret.
+3. VoucherPay shows order context, terms when required, and the hosted card-entry surface.
+4. The acquirer handles card entry and 3DS.
+5. VoucherPay reconciles capture, issues a voucher, sends signed webhooks, and updates the merchant portal.
+6. Voucher value moves through merchant books, holds, reserves, and withdrawal workflows.
 
-- integrating VoucherPay into an ecommerce store;
-- testing the demo checkout flow;
-- issuing API keys and webhooks from the merchant portal;
-- reconciling captured payments, vouchers, withdrawals, and refunds.
+## What you build
 
-## Current integration model
+Most merchants build four pieces:
 
-VoucherPay is designed around a hosted payment flow. Card details are entered into the acquiring provider's hosted card-entry surface, not into your store backend. Your system receives only VoucherPay session state, voucher references, and webhook events.
+| Piece | Runs where | Purpose |
+| --- | --- | --- |
+| Checkout-session route | Your backend | Creates VoucherPay sessions using your merchant API key. |
+| Checkout page | Your frontend | Mounts the VoucherPay widget using `sessionId` and `clientSecret`. |
+| Webhook endpoint | Your backend | Receives signed payment and voucher events. |
+| Admin/operator workflow | Merchant portal | Manages API keys, webhooks, payment review, payouts, and withdrawals. |
 
-## Core URLs
+## Current production surface
 
-Use the demo URLs while testing:
+| Area | Current state |
+| --- | --- |
+| Checkout create endpoint | `POST /v1/public/checkout-sessions` |
+| Browser status endpoint | `GET /v1/public/checkout-sessions/:id/status` |
+| Terms acceptance | Implemented. |
+| Cardholder KYC | Not live. If enabled, payment start fails closed. |
+| Checkout currency | `EUR` only today. |
+| Webhook signature header | `VoucherPay-Signature` |
+| Widget package | `@azure-pay/checkout-widget` |
+| Server SDK package | `@voucherpay/server` |
+
+## Demo URLs
 
 | Surface | URL |
 | --- | --- |
-| Demo merchant store | `https://demo-merchant-demo.up.railway.app` |
+| Demo store | `https://demo-merchant-demo.up.railway.app` |
 | Merchant dashboard | `https://dashboard-demo.up.railway.app` |
-| API base | `https://api-demo-02f5.up.railway.app` |
+| Demo API base | `https://api-demo-02f5.up.railway.app` |
 
-Production URLs will be issued during go-live.
+Production URLs and live credentials are issued during onboarding.
+
+## Recommended path
+
+1. Read [How VoucherPay works](/concepts/how-voucherpay-works).
+2. Complete [Account setup](/getting-started/account-setup).
+3. Follow the [Quickstart](/getting-started/quickstart).
+4. Implement [Webhooks](/integration/webhooks).
+5. Run [Testing](/integration/testing).
+6. Complete the [Go-live checklist](/going-live/checklist).

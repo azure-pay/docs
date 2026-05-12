@@ -1,0 +1,54 @@
+---
+title: "Webhook events"
+description: "VoucherPay webhook event types and payload conventions."
+---
+
+Webhook payloads use this envelope:
+
+```json
+{
+  "id": "evt_...",
+  "type": "payment.captured",
+  "createdAt": "2026-05-12T12:00:00.000Z",
+  "data": {}
+}
+```
+
+## Event types
+
+| Event | Meaning |
+| --- | --- |
+| `payment.captured` | Card payment captured and voucher issuance completed or started. |
+| `payment.failed` | Payment failed, was rejected, or expired. |
+| `voucher.transferred` | Voucher value transferred to merchant books. |
+| `voucher.held` | Voucher value placed on hold. |
+| `voucher.released` | Voucher hold or value released. |
+| `withdrawal.requested` | Merchant requested a withdrawal. |
+| `withdrawal.completed` | Withdrawal completed. |
+| `withdrawal.rejected` | Withdrawal rejected. |
+| `merchant_transfer.requested` | Merchant-to-merchant transfer requested. |
+| `merchant_transfer.completed` | Merchant-to-merchant transfer completed. |
+| `merchant_transfer.rejected` | Merchant-to-merchant transfer rejected. |
+| `merchant_transfer.cancelled` | Merchant-to-merchant transfer cancelled. |
+| `merchant_transfer.received` | Merchant received a transfer. |
+| `chargeback.received` | Chargeback recorded. Availability depends on account configuration. |
+| `chargeback.resolved` | Chargeback resolved. Availability depends on account configuration. |
+
+## Currently common payment events
+
+For a basic checkout integration, implement these first:
+
+- `payment.captured`
+- `payment.failed`
+
+Then add voucher, withdrawal, and chargeback events as your operational flow expands.
+
+## Payload compatibility
+
+Event payloads can gain new fields over time. Ignore unknown fields and key your processing on stable identifiers:
+
+- `id`
+- `type`
+- `data.paymentSessionId`
+- `data.externalReference`
+- `data.voucherReference`, when present

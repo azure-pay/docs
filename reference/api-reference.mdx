@@ -1,0 +1,66 @@
+---
+title: "API reference"
+description: "Current public API surface for merchant checkout integrations."
+---
+
+This page summarizes the current merchant-facing API surface.
+
+## Base URLs
+
+| Environment | Base URL |
+| --- | --- |
+| Demo | `https://api-demo-02f5.up.railway.app` |
+| Production | Issued during go-live. |
+
+## Authentication
+
+Checkout creation uses a merchant API key:
+
+```http
+Authorization: Bearer vpay_test_...
+```
+
+Browser status and gate calls use the session client secret, not the merchant API key.
+
+## Checkout session endpoints
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/v1/public/checkout-sessions` | Merchant API key | Create or return a checkout session. |
+| `GET` | `/v1/public/checkout-sessions/:id` | Merchant API key | Retrieve a session server-side. |
+| `GET` | `/v1/public/checkout-sessions/:id/status` | Client secret header | Browser-safe status projection. |
+| `POST` | `/v1/public/checkout-sessions/:id/accept-terms` | Client secret in body | Accept bound terms. |
+| `POST` | `/v1/public/checkout-sessions/:id/start-payment` | Client secret in body | Start hosted payment after gates clear. |
+
+## Common response wrapper
+
+Successful public API responses use:
+
+```json
+{
+  "ok": true,
+  "data": {}
+}
+```
+
+Errors use:
+
+```json
+{
+  "ok": false,
+  "error": "redirect_origin_not_allowed",
+  "message": "successRedirect origin must be in MerchantConfig.allowedOrigins."
+}
+```
+
+## Important constraints
+
+- Checkout creation currently supports `EUR` only.
+- `metadata` is an object, not free-form text.
+- Redirect origins must be configured before redirect URLs are sent.
+- Cardholder KYC is not live.
+- Idempotency keys are required for safe retries.
+
+## OpenAPI status
+
+If you see older docs mentioning `/payment-sessions`, `checkoutUrl`, `redirectUrl`, or `X-VoucherPay-Signature`, treat them as stale. The current checkout API uses `/checkout-sessions`, `clientSecret`, `iframeCheckoutUrl`, and `VoucherPay-Signature`.

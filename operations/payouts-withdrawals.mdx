@@ -1,42 +1,44 @@
 ---
 title: "Payouts and withdrawals"
-description: "Understand how captured payments become available and how withdrawals are requested."
+description: "Understand when captured value becomes available and how withdrawals work."
 ---
 
-Captured payments do not always become immediately withdrawable. VoucherPay can apply controls before funds are available.
+Captured payment value can move through several states before it is withdrawable.
 
 ## Balance states
 
 | State | Meaning |
 | --- | --- |
-| Captured | Payment succeeded and voucher was issued. |
+| Captured | Payment succeeded and voucher issuance can complete. |
 | On merchant books | Voucher value has moved to the merchant ledger. |
-| Locked or held | Value is temporarily blocked by settlement delay, reserve, risk review, or chargeback control. |
+| Held or locked | Value is blocked by settlement delay, reserve, risk review, chargeback, or missing approval. |
 | Available | Value can be included in a withdrawal request. |
 | Withdrawn | Withdrawal has completed. |
 
 ## Payout destinations
 
-Before withdrawing, add a payout destination and wait for approval.
+Withdrawals require an approved payout destination. Depending on account setup, this can include bank or wallet destinations.
 
-Supported destination types depend on your account setup. The portal may support bank accounts and wallet destinations.
+If no destination is active, the merchant cannot withdraw even if value is available.
 
 ## Withdrawal flow
 
-1. Choose an active payout destination.
-2. Select available value.
-3. Submit the withdrawal request.
-4. VoucherPay reviews and processes the withdrawal.
-5. Final state is visible in the portal and sent by webhook.
+1. Merchant chooses an active payout destination.
+2. Merchant selects available value.
+3. Merchant submits the withdrawal request.
+4. VoucherPay reviews and processes the request.
+5. VoucherPay marks the withdrawal completed or rejected.
+6. Webhook events and portal state update when enabled.
 
-## Why funds may be locked
+## Why value can be locked
 
-Funds can be locked because of:
+Value can be unavailable because of:
 
 - settlement delay;
 - rolling reserve;
 - chargeback hold;
-- missing payout destination approval;
-- operational review.
+- pending payout destination approval;
+- operational review;
+- account restrictions.
 
-Your commercial agreement controls which rules apply in production.
+Your commercial agreement and account configuration determine which controls apply in production.

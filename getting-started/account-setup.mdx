@@ -1,36 +1,56 @@
 ---
 title: "Account setup"
-description: "Create a merchant account, complete KYB, add payout details, and issue API keys."
+description: "Prepare a merchant account before integrating checkout."
 ---
 
-Before integrating checkout, your merchant account must be operational.
+Before your store can create checkout sessions, the merchant account must be operational.
 
 ## Setup checklist
 
-1. Create or receive access to a merchant dashboard account.
+1. Receive merchant dashboard access.
 2. Complete merchant KYB.
 3. Wait for VoucherPay approval.
-4. Add at least one payout destination.
-5. Wait for payout destination approval.
-6. Add allowed storefront origins.
-7. Publish checkout terms if terms acceptance is enabled.
-8. Issue an API key.
-9. Configure a webhook endpoint.
+4. Configure allowed storefront origins.
+5. Create a merchant API key.
+6. Configure a webhook endpoint and signing secret.
+7. Confirm payout destination requirements.
+8. Confirm whether terms acceptance is enabled for your merchant.
 
 ## API keys
 
-API keys are created in the merchant portal. They start with `vpay_`.
+API keys start with `vpay_` and authenticate your backend to VoucherPay.
 
-Use API keys only on your backend. Never expose them in browser code, mobile apps, logs, screenshots, or public repositories.
+Use them only on your server.
+
+Do not put API keys in:
+
+- browser JavaScript;
+- mobile apps;
+- GitHub;
+- analytics events;
+- screenshots;
+- support tickets.
 
 ## Allowed origins
 
-Allowed origins protect your customers from redirect abuse. If your checkout passes redirect URLs, their origins must be configured first.
+If you send redirect URLs when creating a checkout session, their origins must be configured on your merchant account.
 
-Example allowed origin:
+Example origin:
 
 ```text
 https://store.example.com
 ```
 
-Do not include paths. Use only scheme, host, and optional port.
+Use only scheme, host, and optional port. Do not include paths.
+
+If no allowed origin is configured and your request includes redirect URLs, VoucherPay rejects the request.
+
+## Terms
+
+Terms acceptance can be required before payment. Terms are managed by VoucherPay for the merchant account today; the merchant portal shows the current terms state but does not self-publish arbitrary merchant terms.
+
+When terms are required, VoucherPay snapshots the current published terms version onto the checkout session and records acceptance evidence.
+
+## Cardholder KYC
+
+Cardholder KYC is not live. Do not enable cardholder KYC for a production merchant until VoucherPay confirms it is available.

@@ -1,30 +1,40 @@
 ---
 title: "Checkout flow"
-description: "The customer journey from your cart to VoucherPay success and merchant redirect."
+description: "The customer and system journey from cart to payment capture and voucher issuance."
 ---
 
-A complete VoucherPay checkout should feel like part of your store:
+The customer experience should stay simple:
 
-1. Customer lands on your site.
-2. Customer adds an item to cart and clicks checkout.
-3. Your backend creates a VoucherPay checkout session with the order amount and reference.
-4. Your frontend mounts the VoucherPay widget with the `sessionId` and `clientSecret`.
-5. VoucherPay shows the merchant and order context.
-6. If terms are required, the customer reviews and accepts them.
-7. The hosted card-entry form loads.
+1. Customer adds an item to cart.
+2. Customer clicks checkout.
+3. Store backend creates a VoucherPay checkout session.
+4. Store frontend mounts the VoucherPay widget.
+5. Customer reviews the order context.
+6. Customer accepts terms if required.
+7. Hosted card-entry form loads.
 8. Customer enters card details.
-9. 3DS is completed when requested.
-10. VoucherPay polls status using the browser-safe client secret.
-11. On capture, VoucherPay shows success, issues the voucher, sends webhooks, and redirects the customer back to your store.
+9. 3DS runs when requested by the acquirer.
+10. VoucherPay shows success after capture.
+11. Customer returns to the merchant thank-you page.
 
-## Merchant identification
+## What happens server-side
 
-VoucherPay identifies the merchant at checkout-session creation. That is the key control: the order is tied to your merchant account before the cardholder reaches card entry or 3DS.
+| Step | System | Detail |
+| --- | --- | --- |
+| Create session | Merchant backend | Calls `POST /v1/public/checkout-sessions` with merchant API key. |
+| Gate status | Browser widget | Reads `/status` using `X-VoucherPay-Client-Secret`. |
+| Accept terms | Browser widget | Calls `/accept-terms` with the client secret. |
+| Start payment | Browser widget | Calls `/start-payment` after gates clear. |
+| Card entry | Acquirer | Hosted card surface collects card details and 3DS. |
+| Capture | VoucherPay | Reconciles acquirer status and issues voucher. |
+| Fulfillment | Merchant backend | Uses signed webhook events to mark the order paid. |
 
-Your store must never create a generic payment first and decide the merchant later.
+## Do not rely on redirects alone
 
-## Redirects
+Redirects help the customer return to your store, but they are not proof of payment. Your backend should fulfill orders after a signed webhook or a server-side reconciliation confirms final state.
 
-Provide HTTPS redirect URLs for success, failure, cancel, and in-progress states. VoucherPay validates redirect origins against your configured merchant origins.
+## Current limitations
 
-For local development over plain `http://localhost`, the demo store omits redirects so the hosted card surface can render without browser security issues.
+- Checkout creation currently accepts `EUR` only.
+- Cardholder KYC is not live. If a merchant config enables it, payment start fails closed.
+- The browser must never receive your merchant API key.

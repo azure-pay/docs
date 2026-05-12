@@ -1,36 +1,48 @@
 ---
 title: "Merchant portal"
-description: "Manage payments, vouchers, API keys, webhooks, branding, terms, and payout settings."
+description: "Operate payments, vouchers, API keys, webhooks, branding, terms, payouts, and reports."
 ---
 
-The merchant portal is where your operations team manages VoucherPay after integration.
+The merchant portal is the operational surface for VoucherPay.
 
-## Main areas
+## Main sections
 
-| Area | Purpose |
+| Section | Purpose |
 | --- | --- |
-| Overview | Account status, balances, and recent activity. |
-| Payments | Checkout sessions, captures, failed payments, and voucher references. |
+| Overview | Balances, recent activity, and account state. |
+| Payments | Checkout sessions, captured payments, failures, voucher references. |
 | Payouts | Payout destinations and withdrawal requests. |
+| Transfers | Merchant-to-merchant transfer workflows, when enabled. |
+| Chargebacks | Chargeback and hold visibility. |
+| Billing | Fees and billing records. |
+| Reports | Export and reconciliation surfaces. |
 | API keys | Create and revoke backend API keys. |
-| Webhooks | Configure endpoints and inspect delivery history. |
-| Branding | Configure checkout logo, accent color, and display text. |
-| Terms | Publish the terms shown before payment when terms acceptance is enabled. |
+| Webhooks | Configure endpoints and inspect delivery attempts. |
+| Branding | Checkout logo, colors, and display settings. |
+| Terms & Conditions | View current terms state. Terms publishing is managed by VoucherPay today. |
+| Settings | Merchant configuration such as allowed origins. |
+| Help | Support and operational guidance. |
 
-## API key rotation
+## API key operations
 
 1. Create a new API key.
-2. Deploy the new key to your backend.
-3. Confirm traffic uses the new key.
-4. Revoke the old key.
-
-Do not rotate keys by editing frontend code. API keys belong only on your server.
+2. Store it in your backend environment variables.
+3. Deploy your backend.
+4. Confirm checkout traffic uses the new key.
+5. Revoke the old key.
 
 ## Webhook operations
 
 Use webhook delivery history to debug:
 
-- endpoint failures;
+- failed delivery attempts;
 - duplicate events;
-- missing order updates;
-- signature verification errors.
+- dead deliveries after retry exhaustion;
+- signature verification failures;
+- endpoint timeouts.
+
+The signature header is `VoucherPay-Signature`.
+
+## Terms
+
+Terms are not a free-form merchant self-serve editor today. VoucherPay manages the published terms version for the merchant account. If terms are required, the checkout session snapshots the current published version and records acceptance evidence.

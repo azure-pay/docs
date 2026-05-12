@@ -1,41 +1,52 @@
 ---
 title: "Refunds and reversals"
-description: "Understand the difference between same-day reversals and post-settlement refunds."
+description: "Understand post-payment operations and when to use refunds or reversals."
 ---
 
-VoucherPay supports post-payment money movement through controlled merchant and admin workflows.
+Refunds and reversals affect balances, vouchers, and audit history. Treat them as operational money movement, not frontend checkout actions.
 
 ## Reversal
 
 A reversal is a same-day void before settlement. Use it when the original payment should be cancelled before it settles.
 
-Typical use cases:
+Examples:
 
-- customer abandons immediately after payment;
-- duplicate payment caught the same day;
-- merchant cannot fulfil before settlement.
+- duplicate payment caught immediately;
+- order cannot be fulfilled before settlement;
+- customer cancels shortly after payment.
 
 ## Refund
 
-A refund is used after settlement. Depending on acquirer rules, refunds can be full or partial.
+A refund is used after settlement or when a reversal is no longer available.
 
-Typical use cases:
+Examples:
 
-- product returned;
-- partial order cancelled;
-- customer service adjustment.
+- returned item;
+- partial cancellation;
+- customer support adjustment.
+
+## Integration guidance
+
+Do not expose refund or reversal operations directly to the browser.
+
+Today, refund/reversal operations are controlled through authenticated merchant/admin workflows. The server SDK contains a refund helper for internal/operator-authenticated paths, but merchants should not treat it as a normal secret-key checkout API until VoucherPay confirms the public contract for your account.
 
 ## Idempotency
 
-Refund and reversal requests must use an `Idempotency-Key`. Use a stable key derived from your internal operation ID:
+Every refund or reversal operation must use an idempotency key.
+
+Recommended examples:
 
 ```text
-refund-ORDER-1234-1
-reverse-ORDER-1234
+refund:ORDER-1234:1
+reverse:ORDER-1234
 ```
 
-Never retry money-moving calls without the same idempotency key.
+## Webhooks and reconciliation
 
-## Operational note
+After a refund or reversal, reconcile using:
 
-Refunds, reversals, withdrawals, and chargebacks affect merchant balances and audit trails. Use webhooks and the merchant portal to reconcile the final state.
+- merchant portal payment detail;
+- voucher state;
+- webhook events enabled for your account;
+- support/export records when needed.

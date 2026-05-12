@@ -1,0 +1,58 @@
+---
+title: "Session status and gates"
+description: "Read browser-safe checkout status, accept terms, and start hosted payment."
+---
+
+The widget normally handles these calls for you. They are documented so you understand the browser contract.
+
+## Status
+
+```http
+GET /v1/public/checkout-sessions/:id/status
+X-VoucherPay-Client-Secret: cm..._secret_...
+```
+
+Use the `X-VoucherPay-Client-Secret` header. Query-string `client_secret` is legacy-compatible but should not be used in new integrations.
+
+## Accept terms
+
+```http
+POST /v1/public/checkout-sessions/:id/accept-terms
+Content-Type: application/json
+```
+
+```json
+{
+  "clientSecret": "cm..._secret_...",
+  "termsVersionId": "term_...",
+  "locale": "en-GB",
+  "cardholderEmail": "customer@example.com"
+}
+```
+
+VoucherPay records:
+
+- terms version ID;
+- rendered text hash;
+- cardholder email when supplied;
+- IP address;
+- user agent;
+- locale;
+- acceptance timestamp.
+
+## Start payment
+
+```http
+POST /v1/public/checkout-sessions/:id/start-payment
+Content-Type: application/json
+```
+
+```json
+{
+  "clientSecret": "cm..._secret_..."
+}
+```
+
+This creates or returns the acquirer hosted-payment order after all gates are cleared.
+
+If cardholder KYC is enabled, this route currently fails closed with `kyc_not_implemented`. Cardholder KYC is not live.

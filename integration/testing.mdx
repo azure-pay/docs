@@ -1,9 +1,9 @@
 ---
 title: "Testing"
-description: "Test checkout, webhooks, and merchant operations before going live."
+description: "Test checkout, webhooks, idempotency, and operational flows before go-live."
 ---
 
-Use the demo environment for integration testing.
+Use the demo environment while integrating.
 
 ## Demo surfaces
 
@@ -11,23 +11,26 @@ Use the demo environment for integration testing.
 | --- | --- |
 | Demo store | `https://demo-merchant-demo.up.railway.app` |
 | Merchant dashboard | `https://dashboard-demo.up.railway.app` |
-| API | `https://api-demo-02f5.up.railway.app` |
+| API base | `https://api-demo-02f5.up.railway.app` |
 
-## Suggested test flow
+## Test matrix
 
-1. Create a merchant API key.
-2. Create a checkout session from your backend.
-3. Mount the widget in your frontend.
-4. Complete card entry and 3DS with sandbox test details.
-5. Confirm success page renders.
-6. Confirm webhook receipt.
-7. Confirm payment appears in the merchant dashboard.
-8. Confirm voucher reference exists.
-9. Request a withdrawal when funds are available.
+| Scenario | What to verify |
+| --- | --- |
+| Successful checkout | Widget reaches success and `payment.captured` arrives. |
+| Terms required | Terms screen appears before hosted card entry. |
+| Duplicate create call | Same order ID does not create duplicate payment sessions. |
+| Redirect validation | Unconfigured redirect origin is rejected. |
+| Failed payment | Customer sees failure and webhook is handled idempotently. |
+| Expired/stuck session | Store can show retry and reconcile state. |
+| Webhook duplicate | Duplicate event does not double-fulfill order. |
+| Webhook bad signature | Endpoint rejects the event. |
+| Refund/reversal | Operational flow is tested before launch. |
+| Payout destination | Withdrawal is blocked until destination is approved. |
 
 ## Test card
 
-For the current sandbox flow, use:
+For the current sandbox flow:
 
 ```text
 4242 4242 4242 4242
@@ -37,16 +40,23 @@ Any CVC
 
 3DS behavior depends on the acquirer sandbox scenario.
 
-## Release smoke check
+## Manual end-to-end test
 
-From this repository, run:
+1. Create a checkout session from your backend.
+2. Mount the widget.
+3. Complete card entry and 3DS if requested.
+4. Confirm the widget reaches success.
+5. Confirm your webhook endpoint receives `payment.captured`.
+6. Confirm your order is marked paid once.
+7. Confirm the payment appears in the merchant dashboard.
+8. Confirm a voucher reference is visible when issued.
+
+## Internal smoke command
+
+Repository maintainers can run:
 
 ```bash
 pnpm smoke:release
 ```
 
-To also create a checkout session:
-
-```bash
-MERCHANT_API_KEY=vpay_test_... pnpm smoke:release
-```
+This is an internal release smoke check, not a merchant integration requirement.

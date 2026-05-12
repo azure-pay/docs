@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
   "name": "VoucherPay Docs",
-  "description": "Merchant documentation for accepting card payments, issuing vouchers, and managing payouts with VoucherPay.",
+  "description": "Merchant documentation for integrating VoucherPay checkout, webhooks, vouchers, and payouts.",
   "colors": {
     "primary": "#0F172A",
     "light": "#F8FAFC",
@@ -27,39 +27,60 @@
         "pages": [
           "index",
           "concepts/how-voucherpay-works",
-          "concepts/checkout-flow"
+          "concepts/checkout-flow",
+          "getting-started/account-setup"
         ]
       },
       {
-        "group": "Get started",
+        "group": "Build checkout",
         "pages": [
-          "getting-started/account-setup",
-          "getting-started/quickstart"
-        ]
-      },
-      {
-        "group": "Integrate checkout",
-        "pages": [
+          "getting-started/quickstart",
+          "integration/end-to-end",
           "integration/create-checkout-session",
           "integration/mount-widget",
-          "integration/webhooks",
-          "integration/refunds-reversals",
-          "integration/testing"
+          "integration/status-and-gates",
+          "integration/idempotency-retries"
         ]
       },
       {
-        "group": "Operate your account",
+        "group": "Webhooks",
         "pages": [
-          "operations/merchant-portal",
+          "integration/webhooks",
+          "reference/webhook-events"
+        ]
+      },
+      {
+        "group": "Testing",
+        "pages": [
+          "integration/testing",
+          "troubleshooting/common-issues"
+        ]
+      },
+      {
+        "group": "Money movement",
+        "pages": [
+          "integration/refunds-reversals",
           "operations/payouts-withdrawals"
+        ]
+      },
+      {
+        "group": "Merchant portal",
+        "pages": [
+          "operations/merchant-portal"
+        ]
+      },
+      {
+        "group": "API reference",
+        "pages": [
+          "reference/api-reference",
+          "reference/statuses-and-errors",
+          "reference/security"
         ]
       },
       {
         "group": "Go live",
         "pages": [
-          "going-live/checklist",
-          "reference/security",
-          "reference/statuses-and-errors"
+          "going-live/checklist"
         ]
       }
     ]

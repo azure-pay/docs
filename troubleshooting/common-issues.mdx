@@ -1,0 +1,95 @@
+---
+title: "Common issues"
+description: "Troubleshoot checkout, widget, webhook, and merchant setup problems."
+---
+
+## API key rejected
+
+Symptoms:
+
+- `api_key_required`
+- `api_key_invalid`
+
+Fix:
+
+1. Confirm the key starts with `vpay_`.
+2. Confirm it is sent as `Authorization: Bearer <key>`.
+3. Confirm it was not revoked.
+4. Confirm it belongs to the merchant you are testing.
+
+## Redirect origin not allowed
+
+Symptoms:
+
+- `redirect_origin_not_configured`
+- `redirect_origin_not_allowed`
+
+Fix:
+
+1. Add the storefront origin in merchant settings.
+2. Use only scheme + host + optional port.
+3. Confirm the redirect URL is HTTPS in non-local environments.
+
+## Widget does not load
+
+Check:
+
+- `sessionId` is present.
+- `clientSecret` is present.
+- `apiBaseUrl` points to the right environment.
+- Merchant API key is not being sent to the browser.
+- Browser console has no CSP/network errors.
+
+## Hosted frame failed
+
+Possible causes:
+
+- acquirer order was not created;
+- hosted URL expired;
+- browser blocked the frame;
+- redirect URLs are plain `http://` in a context where the hosted provider requires HTTPS;
+- acquirer sandbox is unavailable.
+
+Create a fresh checkout session and check the payment session in the merchant portal.
+
+## Payment stuck processing
+
+Do not create a duplicate order immediately.
+
+1. Wait for the webhook.
+2. Refresh the session status.
+3. Reconcile by `paymentSessionId` or `externalReference`.
+4. Contact support with session ID and timestamp if it remains stuck.
+
+## Webhook signature mismatch
+
+Fix:
+
+1. Read the exact raw request body.
+2. Use the `VoucherPay-Signature` header.
+3. Verify against the correct webhook signing secret.
+4. Check server clock skew.
+5. Do not parse and re-stringify JSON before verification.
+
+## Duplicate checkout sessions
+
+Use the same `externalReference` and `Idempotency-Key` when retrying the same order. Do not create a new order ID after a network timeout.
+
+## Terms not published
+
+If terms acceptance is required but no terms are published, checkout creation fails with `merchant_terms_not_published`. Contact VoucherPay support to publish or update terms for the merchant account.
+
+## Acquirer not provisioned
+
+If checkout creation returns `acquirer_not_provisioned`, the merchant is not ready for live acquiring. Complete onboarding or contact VoucherPay support.
+
+## Support information to collect
+
+Always include:
+
+- merchant name;
+- `externalReference`;
+- VoucherPay session ID;
+- webhook event ID or delivery ID;
+- timestamp and timezone;
+- screenshot or browser console error when relevant.

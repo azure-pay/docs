@@ -1,9 +1,9 @@
 ---
-title: "Quickstart"
-description: "Create a checkout session from your backend and mount the VoucherPay widget in your storefront."
+title: "Quickstart: accept your first payment"
+description: "Build the minimum VoucherPay checkout path with a backend session route and frontend widget mount."
 ---
 
-This quickstart uses the server SDK and browser widget.
+This guide creates one checkout session and mounts the VoucherPay widget.
 
 ## 1. Install packages
 
@@ -11,75 +11,143 @@ This quickstart uses the server SDK and browser widget.
 npm install @voucherpay/server @azure-pay/checkout-widget
 ```
 
-## 2. Add environment variables
+The current package names are:
+
+| Package | Runs where | Purpose |
+| --- | --- | --- |
+| `@voucherpay/server` | Backend only | Creates sessions and verifies webhooks. |
+| `@azure-pay/checkout-widget` | Browser | Mounts VoucherPay checkout. |
+
+## 2. Configure environment variables
 
 ```bash
 VOUCHERPAY_API_BASE_URL=https://api-demo-02f5.up.railway.app
 VOUCHERPAY_SECRET_KEY=vpay_test_...
+VOUCHERPAY_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_VOUCHERPAY_API_BASE_URL=https://api-demo-02f5.up.railway.app
 ```
 
-Use your own issued API key from the merchant portal.
+## 3. Create a backend route
 
-## 3. Create a checkout session on your backend
+This example is a Next.js route handler. The same pattern applies to Express, Rails, Laravel, Django, or any backend.
 
 ```ts
+// app/api/voucherpay/checkout/route.ts
 import { VoucherPay } from "@voucherpay/server";
 
 const voucherpay = new VoucherPay(process.env.VOUCHERPAY_SECRET_KEY!, {
   apiBaseUrl: process.env.VOUCHERPAY_API_BASE_URL,
 });
 
-const session = await voucherpay.sessions.create(
-  {
-    externalReference: "ORDER-1234",
+export async function POST(request: Request) {
+  const body = (await request.json()) as {
+    orderId: string;
+    customerEmail?: string;
+  };
+
+  // Load the order from your database. Do not trust client-supplied totals.
+  const order = {
+    id: body.orderId,
     amountCents: 9900,
-    currency: "EUR",
-    customerEmail: "customer@example.com",
-    productTitle: "Order ORDER-1234",
-    successRedirect: "https://store.example.com/thanks",
-    failureRedirect: "https://store.example.com/checkout?failed=1",
-    cancelRedirect: "https://store.example.com/checkout?cancelled=1",
-    metadata: {
-      orderId: "ORDER-1234",
+    currency: "EUR" as const,
+    description: "Order " + body.orderId,
+  };
+
+  const session = await voucherpay.sessions.create(
+    {
+      externalReference: order.id,
+      amountCents: order.amountCents,
+      currency: order.currency,
+      customerEmail: body.customerEmail,
+      productTitle: order.description,
+      successRedirect: "https://store.example.com/thanks",
+      failureRedirect: "https://store.example.com/checkout?failed=1",
+      cancelRedirect: "https://store.example.com/checkout?cancelled=1",
+      inProgressRedirect: "https://store.example.com/checkout?pending=1",
+      metadata: {
+        orderId: order.id,
+      },
     },
-  },
-  {
-    idempotencyKey: "ORDER-1234",
-  },
-);
+    {
+      idempotencyKey: order.id,
+    },
+  );
+
+  return Response.json({
+    sessionId: session.id,
+    clientSecret: session.clientSecret,
+  });
+}
 ```
 
-Return only the browser-safe fields to your frontend:
+Important:
 
-```ts
-return {
-  sessionId: session.id,
-  clientSecret: session.clientSecret,
-};
-```
+- The amount and currency must come from your server-side order record.
+- Use a stable `Idempotency-Key`, usually your immutable order ID.
+- Checkout creation currently accepts `EUR` only.
 
 ## 4. Mount the widget
 
-```ts
-import { mount } from "@azure-pay/checkout-widget";
+```tsx
+"use client";
 
-const handle = mount({
-  target: "#voucherpay-checkout",
-  sessionId,
-  clientSecret,
-  apiBaseUrl: process.env.NEXT_PUBLIC_VOUCHERPAY_API_BASE_URL,
-  onSuccess: ({ paymentSessionId, voucherReference }) => {
-    console.log("Paid", paymentSessionId, voucherReference);
-  },
-  onError: ({ code, message }) => {
-    console.error(code, message);
-  },
-});
+import { useEffect, useRef, useState } from "react";
+import { mount, type WidgetHandle } from "@azure-pay/checkout-widget";
+
+export function VoucherPayCheckout({ orderId }: { orderId: string }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const handleRef = useRef<WidgetHandle | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function start() {
+      const response = await fetch("/api/voucherpay/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+
+      const data = (await response.json()) as {
+        sessionId: string;
+        clientSecret: string;
+      };
+
+      if (cancelled || !containerRef.current) return;
+
+      handleRef.current = mount({
+        target: containerRef.current,
+        sessionId: data.sessionId,
+        clientSecret: data.clientSecret,
+        apiBaseUrl: process.env.NEXT_PUBLIC_VOUCHERPAY_API_BASE_URL,
+        onSuccess: ({ paymentSessionId, voucherReference }) => {
+          console.log("VoucherPay captured", paymentSessionId, voucherReference);
+        },
+        onError: ({ code, message }) => {
+          setError(`${code}: ${message}`);
+        },
+      });
+    }
+
+    void start().catch((err) => {
+      setError(err instanceof Error ? err.message : "Checkout failed");
+    });
+
+    return () => {
+      cancelled = true;
+      handleRef.current?.destroy();
+    };
+  }, [orderId]);
+
+  if (error) return <p>{error}</p>;
+
+  return <div ref={containerRef} />;
+}
 ```
 
-Destroy the widget when leaving the page:
+## 5. Fulfill with webhooks
 
-```ts
-handle.destroy();
-```
+Use the success callback to update the page, but use signed webhooks to mark the order paid in your backend.
+
+Next: implement [Webhooks](/integration/webhooks).

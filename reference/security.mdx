@@ -3,14 +3,12 @@ title: "Security"
 description: "Security requirements for a safe VoucherPay integration."
 ---
 
-## Keep API keys server-side
-
-Merchant API keys must never be sent to browsers, mobile apps, or third-party clients.
+## Keep merchant API keys server-side
 
 Correct:
 
 ```text
-Browser -> your backend -> VoucherPay
+Browser -> merchant backend -> VoucherPay
 ```
 
 Incorrect:
@@ -19,26 +17,50 @@ Incorrect:
 Browser -> VoucherPay with merchant API key
 ```
 
-## Use client secrets in the browser
+The browser should receive only `sessionId` and `clientSecret`.
 
-The browser may use only the session-scoped `clientSecret`. It can read public status for one checkout session and cannot create payments for the merchant.
+## Do not trust client totals
+
+Never let the browser choose:
+
+- amount;
+- currency;
+- order reference;
+- merchant ID;
+- product price.
+
+Load the order from your database, then create the VoucherPay session server-side.
 
 ## Verify webhooks
 
-Always verify `VoucherPay-Signature` against the raw request body. Reject events that fail verification.
+Always verify `VoucherPay-Signature` against the raw request body. Reject events with invalid signatures or stale timestamps.
 
-## Use idempotency keys
+## Use HTTPS
 
-All money-moving operations must use idempotency keys. Use stable IDs from your own system, such as order IDs, refund IDs, or withdrawal operation IDs.
+Use HTTPS for:
 
-## Validate redirects
+- storefront checkout pages;
+- redirect URLs;
+- webhook endpoints;
+- dashboard access.
 
-VoucherPay validates redirect URLs, but your store should also avoid user-controlled redirects after checkout.
+## Hosted card entry and PCI scope
 
-## Recommended controls
+VoucherPay uses hosted card entry through the acquiring provider. Your store should not collect raw card numbers, expiry dates, or CVC values.
 
-- Store secrets in a secret manager or hosting provider env vars.
-- Rotate API keys regularly.
-- Use HTTPS everywhere.
-- Log VoucherPay session IDs and your internal order IDs.
-- Do not log full API keys, webhook secrets, or client secrets.
+## Logging rules
+
+Do not log:
+
+- full API keys;
+- webhook signing secrets;
+- full client secrets;
+- cardholder card data.
+
+Safe identifiers to log:
+
+- your `externalReference`;
+- VoucherPay session ID;
+- webhook event ID;
+- delivery ID;
+- voucher reference.

@@ -1,0 +1,47 @@
+---
+title: "End-to-end integration guide"
+description: "Build the full checkout path: order, session, widget, webhook, fulfillment, and dashboard reconciliation."
+---
+
+This is the production integration path.
+
+## Flow
+
+1. Customer chooses products in your store.
+2. Your backend creates an internal order in `pending_payment`.
+3. Your backend calls VoucherPay to create a checkout session.
+4. Your frontend mounts the VoucherPay widget.
+5. VoucherPay handles terms and hosted card entry.
+6. VoucherPay captures payment and issues a voucher.
+7. VoucherPay sends `payment.captured` to your webhook endpoint.
+8. Your backend verifies the webhook and marks the order paid.
+9. Your operations team can reconcile the payment and voucher in the merchant portal.
+
+## Store database recommendation
+
+Store at least:
+
+| Field | Purpose |
+| --- | --- |
+| `order_id` | Your immutable reference and idempotency key. |
+| `voucherpay_session_id` | Link to VoucherPay session. |
+| `voucher_reference` | Voucher issued after capture, when present. |
+| `payment_status` | Your local order/payment state. |
+| `last_webhook_event_id` | Helpful for support and duplicate handling. |
+
+## State mapping
+
+| VoucherPay signal | Suggested store action |
+| --- | --- |
+| Checkout session created | Keep order `pending_payment`. |
+| Widget `onProcessing` | Show waiting state to customer. |
+| Widget `onSuccess` | Show success screen, but wait for backend confirmation for fulfillment. |
+| `payment.captured` webhook | Mark order paid and release fulfillment. |
+| `payment.failed` webhook | Mark payment failed or allow retry. |
+| Timeout/no webhook | Reconcile by session ID before manual action. |
+
+## Why webhooks are required
+
+The customer can close the browser before redirect. A redirect can be blocked. A network call can time out after the acquirer captured payment.
+
+For that reason, the webhook is the durable payment confirmation path.

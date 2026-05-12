@@ -1,15 +1,21 @@
 ---
 title: "Mount the checkout widget"
-description: "Use the browser-safe session ID and client secret to render VoucherPay checkout."
+description: "Render VoucherPay checkout in the browser with session ID and client secret."
 ---
 
-The widget runs in the browser. It must receive only:
+The widget is browser-safe. It must receive only:
 
 - `sessionId`
 - `clientSecret`
 - optional public API base URL
 
 Never pass your merchant API key to the browser.
+
+## Install
+
+```bash
+npm install @azure-pay/checkout-widget
+```
 
 ## Basic mount
 
@@ -27,6 +33,21 @@ const handle = mount({
   apiBaseUrl: "https://api-demo-02f5.up.railway.app",
 });
 ```
+
+## Options
+
+| Option | Required | Notes |
+| --- | --- | --- |
+| `target` | Yes | CSS selector or HTMLElement. |
+| `sessionId` | Yes | Returned by your backend. |
+| `clientSecret` | Yes | Returned by your backend. |
+| `apiBaseUrl` | No | Defaults to production API when omitted. |
+| `cardholderEmail` | No | Captured with terms acceptance evidence. |
+| `locale` | No | Captured with terms acceptance evidence. |
+| `pollIntervalMs` | No | Forces fixed polling interval. |
+| `maxPollDurationMs` | No | Defaults to 15 minutes. |
+
+The `iframeUrl` option is deprecated. The widget discovers the current hosted-payment URL from VoucherPay status and start-payment responses.
 
 ## Lifecycle handlers
 
@@ -48,34 +69,30 @@ const handle = mount({
     console.log("Payment processing");
   },
   onSuccess: ({ paymentSessionId, voucherReference }) => {
-    console.log("Payment captured", paymentSessionId, voucherReference);
+    console.log("Captured", paymentSessionId, voucherReference);
   },
   onError: ({ code, message }) => {
-    console.error("VoucherPay error", code, message);
+    console.error(code, message);
   },
 });
 ```
 
-## Status polling
+## Polling behavior
 
-The widget polls VoucherPay status using `X-VoucherPay-Client-Secret`. It does not use your merchant API key.
+By default, the widget follows a backoff schedule:
 
-By default, the widget uses a backoff-style polling schedule. You can override it:
-
-```ts
-mount({
-  target: "#voucherpay-checkout",
-  sessionId,
-  clientSecret,
-  pollIntervalMs: 3000,
-  maxPollDurationMs: 15 * 60 * 1000,
-});
+```text
+5s -> 10s -> 20s -> 30s -> 60s
 ```
+
+It continues at the last interval until the maximum polling duration is reached. Set `pollIntervalMs` only when you intentionally want fixed polling.
 
 ## Cleanup
 
-If your app navigates away or remounts the checkout page, destroy the old widget instance:
+Destroy the widget when the checkout component unmounts:
 
 ```ts
 handle.destroy();
 ```
+
+This prevents duplicate polling loops and duplicate hosted-payment frames after route changes or React remounts.

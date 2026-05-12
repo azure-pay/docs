@@ -1,35 +1,85 @@
 ---
 title: "Create checkout sessions"
-description: "Create a VoucherPay checkout session from your server for each store order."
+description: "API reference and examples for creating VoucherPay checkout sessions."
 ---
 
-Create checkout sessions from your backend. This binds the payment to your merchant account and keeps your API key secret.
+Create checkout sessions from your backend. This binds the order to your merchant account before the cardholder reaches card entry.
 
 ## Endpoint
 
 ```http
-POST /v1/public/checkout-sessions
+POST https://api-demo-02f5.up.railway.app/v1/public/checkout-sessions
 Authorization: Bearer vpay_test_...
 Content-Type: application/json
 Idempotency-Key: ORDER-1234
 ```
 
-## Request
+## Request body
 
-```json
-{
-  "externalReference": "ORDER-1234",
-  "amountCents": 9900,
-  "currency": "EUR",
-  "customerEmail": "customer@example.com",
-  "productTitle": "Order ORDER-1234",
-  "successRedirect": "https://store.example.com/thanks",
-  "failureRedirect": "https://store.example.com/checkout?failed=1",
-  "cancelRedirect": "https://store.example.com/checkout?cancelled=1",
-  "metadata": {
-    "orderId": "ORDER-1234"
-  }
-}
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `externalReference` | string | Yes | Your immutable order reference. Max 80 chars. |
+| `amountCents` | integer | Yes | Positive integer in minor units. |
+| `currency` | string | Yes | Currently `EUR` only. |
+| `customerEmail` | string | No | Cardholder email when known. |
+| `productTitle` | string | No | Shown in acquirer/checkout context. Max 120 chars. |
+| `successRedirect` | URL | No | HTTPS return URL after success. |
+| `failureRedirect` | URL | No | HTTPS return URL after failure. |
+| `cancelRedirect` | URL | No | HTTPS return URL after cancellation. |
+| `inProgressRedirect` | URL | No | HTTPS return URL if payment remains in progress. |
+| `metadata` | object | Yes | Key-value metadata object. Use `{}` if empty. |
+
+## cURL example
+
+```bash
+curl https://api-demo-02f5.up.railway.app/v1/public/checkout-sessions \
+  -H "Authorization: Bearer $VOUCHERPAY_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: ORDER-1234" \
+  --data '{
+    "externalReference": "ORDER-1234",
+    "amountCents": 9900,
+    "currency": "EUR",
+    "customerEmail": "customer@example.com",
+    "productTitle": "Order ORDER-1234",
+    "successRedirect": "https://store.example.com/thanks",
+    "failureRedirect": "https://store.example.com/checkout?failed=1",
+    "cancelRedirect": "https://store.example.com/checkout?cancelled=1",
+    "inProgressRedirect": "https://store.example.com/checkout?pending=1",
+    "metadata": {
+      "orderId": "ORDER-1234"
+    }
+  }'
+```
+
+## SDK example
+
+```ts
+import { VoucherPay } from "@voucherpay/server";
+
+const voucherpay = new VoucherPay(process.env.VOUCHERPAY_SECRET_KEY!, {
+  apiBaseUrl: "https://api-demo-02f5.up.railway.app",
+});
+
+const session = await voucherpay.sessions.create(
+  {
+    externalReference: "ORDER-1234",
+    amountCents: 9900,
+    currency: "EUR",
+    customerEmail: "customer@example.com",
+    productTitle: "Order ORDER-1234",
+    successRedirect: "https://store.example.com/thanks",
+    failureRedirect: "https://store.example.com/checkout?failed=1",
+    cancelRedirect: "https://store.example.com/checkout?cancelled=1",
+    inProgressRedirect: "https://store.example.com/checkout?pending=1",
+    metadata: {
+      orderId: "ORDER-1234",
+    },
+  },
+  {
+    idempotencyKey: "ORDER-1234",
+  },
+);
 ```
 
 ## Response
@@ -44,20 +94,39 @@ Idempotency-Key: ORDER-1234
     "amountCents": 9900,
     "currency": "EUR",
     "iframeCheckoutUrl": null,
+    "acquirerOrderId": null,
+    "acquirerRawStatus": null,
     "clientSecret": "cm..._secret_...",
     "metadata": {
       "orderId": "ORDER-1234"
-    }
+    },
+    "gates": {
+      "required": [
+        {
+          "kind": "terms",
+          "termsVersionId": "term_...",
+          "bodySha256": "..."
+        }
+      ],
+      "pending": ["terms"]
+    },
+    "nextStep": "accept-terms",
+    "createdAt": "2026-05-12T12:00:00.000Z",
+    "updatedAt": "2026-05-12T12:00:00.000Z"
   }
 }
 ```
 
-## Idempotency
+## Redirect validation
 
-Use a stable idempotency key for every create request. The best value is your immutable order ID.
+VoucherPay rejects redirect URLs when:
 
-If the customer refreshes checkout, call the same endpoint with the same `externalReference` and idempotency key. VoucherPay returns the existing session instead of creating a duplicate order.
+- the URL is unsafe or private-network;
+- the merchant has no allowed origins configured;
+- the URL origin is not in the merchant allowed origins.
 
-## Redirect origin validation
+Configure origins before sending redirect URLs.
 
-If you send redirect URLs, their origins must be configured on your merchant account. VoucherPay rejects unsafe, private-network, or unapproved redirect URLs.
+## Duplicate requests
+
+VoucherPay deduplicates checkout sessions by merchant and `externalReference`. Use the same `Idempotency-Key` when retrying the same operation.
