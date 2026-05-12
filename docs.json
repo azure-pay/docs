@@ -25,7 +25,7 @@
       {
         "group": "Start here",
         "pages": [
-          "introduction",
+          "index",
           "concepts/how-voucherpay-works",
           "concepts/checkout-flow"
         ]
